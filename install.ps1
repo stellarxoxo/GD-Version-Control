@@ -69,9 +69,9 @@ try {
         Push-Location $batDir
         
         if ($batFile.Extension -eq '.ps1') {
-            Write-Host "Running PowerShell script..." -ForegroundColor Yellow
-            $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy", "Bypass", "-File", "`"$batPath`"" -Wait -PassThru -WorkingDirectory $batDir
-            Write-Host "Script completed with exit code: $($process.ExitCode)" -ForegroundColor Gray
+            Write-Host "Running PowerShell script in current session..." -ForegroundColor Yellow
+            # Execute the script in the current PowerShell session
+            & $batPath
         } else {
             & cmd.exe /c "`"$batPath`""
         }
