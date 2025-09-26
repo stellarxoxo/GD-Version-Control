@@ -65,4 +65,9 @@ try {
 }
 
 Write-Host "`nInstallation complete! You can now close this window." -ForegroundColor Green
+Write-Host "Press any key to exit..." -ForegroundColor Yellow
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+
+Write-Host "`nInstallation complete! You can now close this window." -ForegroundColor Green
+
 Read-Host "Press Enter to exit"
