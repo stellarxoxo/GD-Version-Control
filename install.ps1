@@ -36,14 +36,26 @@ try {
     $extractedContent = Get-ChildItem -Path "$temp\extracted" -Recurse
     Copy-Item -Path "$temp\extracted\*" -Destination $installPath -Recurse -Force
     
-    Write-Host "Looking for installer..." -ForegroundColor Cyan
-    $batFile = Get-ChildItem -Path $installPath -Name "path_adder.ps1" -Recurse | Select-Object -First 1
+    Write-Host "Looking for path_adder..." -ForegroundColor Cyan
+    $batFile = Get-ChildItem -Path $installPath -Name "path_adder.*" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in @('.bat', '.cmd', '.ps1') } | Select-Object -First 1
     
-    if ($batFile) {
-        Write-Host "Running path adder..." -ForegroundColor Green
+    if ($batFile -and $batFile.FullName) {
         $batPath = $batFile.FullName
-        Set-Location -Path (Split-Path $batPath)
-        & cmd.exe /c "`"$batPath`""
+        Write-Host "Found: $batPath" -ForegroundColor Gray
+        Write-Host "Running path adder..." -ForegroundColor Green
+        
+        $batDir = Split-Path $batPath -Parent
+        Push-Location $batDir
+        
+        if ($batFile.Extension -eq '.ps1') {
+            Write-Host "Running PowerShell script..." -ForegroundColor Yellow
+            $process = Start-Process -FilePath "powershell.exe" -ArgumentList "-ExecutionPolicy", "Bypass", "-File", "`"$batPath`"" -Wait -PassThru -WorkingDirectory $batDir
+            Write-Host "Script completed with exit code: $($process.ExitCode)" -ForegroundColor Gray
+        } else {
+            & cmd.exe /c "`"$batPath`""
+        }
+        
+        Pop-Location
         
         if ($LASTEXITCODE -eq 0) {
             Write-Host "`n✅ $programName installed successfully to $installPath!" -ForegroundColor Green
@@ -51,7 +63,10 @@ try {
             Write-Host "`n❌ Installation may have encountered issues." -ForegroundColor Yellow
         }
     } else {
-        Write-Host "❌ Error: path_adder.ps1 not found in the downloaded package!" -ForegroundColor Red
+        Write-Host "❌ Error: path_adder file not found!" -ForegroundColor Red
+        Write-Host "Looking for: path_adder.bat, path_adder.cmd, or path_adder.ps1" -ForegroundColor Yellow
+        Write-Host "Contents of installation directory:" -ForegroundColor Yellow
+        Get-ChildItem -Path $installPath -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" -ForegroundColor Gray }
         exit 1
     }
     
@@ -65,4 +80,5 @@ try {
 }
 
 Write-Host "`nInstallation complete! You can now close this window." -ForegroundColor Green
-Read-Host "Press Enter to exit"
+Write-Host "Press any key to exit..." -ForegroundColor Yellow
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
