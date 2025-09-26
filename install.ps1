@@ -1,10 +1,3 @@
-# SHORT ONE-LINER (what users will run):
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Invoke-Expression "& { $(Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/stellarxoxo/GD-Version-Control/main/install.ps1') }"
-
-# ================================================================================================
-# FULL INSTALLER SCRIPT (save this as "install.ps1" in your GitHub repo root):
-# ================================================================================================
-
 # Check for admin privileges
 if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Host "This installer must be run as Administrator!" -ForegroundColor Red
@@ -165,3 +158,4 @@ try {
 Write-Host "`nInstallation complete! You can now close this window." -ForegroundColor Green
 Write-Host "Press any key to exit..." -ForegroundColor Yellow
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+
