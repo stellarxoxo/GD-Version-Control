@@ -36,13 +36,34 @@ try {
     $extractedContent = Get-ChildItem -Path "$temp\extracted" -Recurse
     Copy-Item -Path "$temp\extracted\*" -Destination $installPath -Recurse -Force
     
-    Write-Host "Looking for path_adder..." -ForegroundColor Cyan
-    $batFile = Get-ChildItem -Path $installPath -Filter "path_adder.*" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in @('.bat', '.cmd', '.ps1') } | Select-Object -First 1
+    # Wait for antivirus to finish scanning
+    Write-Host "Waiting for file system to settle..." -ForegroundColor Gray
+    Start-Sleep -Milliseconds 500
     
-    if ($batFile -and $batFile.FullName) {
+    Write-Host "Looking for path_adder..." -ForegroundColor Cyan
+    
+    # Simple direct file checks
+    $possibleFiles = @(
+        "$installPath\path_adder.ps1",
+        "$installPath\path_adder.bat", 
+        "$installPath\path_adder.cmd",
+        "$installPath\GD Version Control\path_adder.ps1",
+        "$installPath\GD Version Control\path_adder.bat",
+        "$installPath\GD Version Control\path_adder.cmd"
+    )
+    
+    $batFile = $null
+    foreach ($file in $possibleFiles) {
+        if (Test-Path $file) {
+            $batFile = Get-Item $file
+            Write-Host "Found: $file" -ForegroundColor Green
+            break
+        }
+    }
+    
+    if ($batFile -and (Test-Path $batFile.FullName)) {
         $batPath = $batFile.FullName
-        Write-Host "Found: $batPath" -ForegroundColor Gray
-        Write-Host "Running path adder..." -ForegroundColor Green
+        Write-Host "Running: $batPath" -ForegroundColor Green
         
         $batDir = Split-Path $batPath -Parent
         Push-Location $batDir
