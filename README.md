@@ -8,3 +8,8 @@ A command line program so you don't have to create hundreds of copies of everyth
 
 After running this, the "gd" program will be added to your environment variables. Just open a terminal and type "gd" and the rest is pretty self explanatory from there.
 You must be in the GD editor to commit.
+
+## Manual Installation
+Download the `GD Version Control` zip file and then just put it somewhere. Then, add the folder to your Environment Variables.
+When you type "gd" in a command prompt you might get an error that the python module `rich` is not installed. Type `pip3 install rich` to fix this.
+Then it should all work ^_^
