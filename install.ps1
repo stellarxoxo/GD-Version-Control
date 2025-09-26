@@ -37,7 +37,7 @@ try {
     Copy-Item -Path "$temp\extracted\*" -Destination $installPath -Recurse -Force
     
     Write-Host "Looking for path_adder..." -ForegroundColor Cyan
-    $batFile = Get-ChildItem -Path $installPath -Name "path_adder.*" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in @('.bat', '.cmd', '.ps1') } | Select-Object -First 1
+    $batFile = Get-ChildItem -Path $installPath -Filter "path_adder.*" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in @('.bat', '.cmd', '.ps1') } | Select-Object -First 1
     
     if ($batFile -and $batFile.FullName) {
         $batPath = $batFile.FullName
