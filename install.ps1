@@ -40,55 +40,94 @@ try {
     Write-Host "Waiting for file system to settle..." -ForegroundColor Gray
     Start-Sleep -Milliseconds 500
     
-    Write-Host "Looking for path_adder..." -ForegroundColor Cyan
+    Write-Host "Setting up PATH..." -ForegroundColor Cyan
     
-    # Simple direct file checks
-    $possibleFiles = @(
-        "$installPath\path_adder.ps1",
-        "$installPath\path_adder.bat", 
-        "$installPath\path_adder.cmd",
-        "$installPath\GD Version Control\path_adder.ps1",
-        "$installPath\GD Version Control\path_adder.bat",
-        "$installPath\GD Version Control\path_adder.cmd"
-    )
+    # Use the actual installation directory for PATH
+    $pathToAdd = "$installPath\GD Version Control"
+    Write-Host "Adding directory to PATH: $pathToAdd" -ForegroundColor Gray
     
-    $batFile = $null
-    foreach ($file in $possibleFiles) {
-        if (Test-Path $file) {
-            $batFile = Get-Item $file
-            Write-Host "Found: $file" -ForegroundColor Green
-            break
+    # Check if the directory is already in PATH
+    $currentSystemPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    $currentUserPath = [Environment]::GetEnvironmentVariable("Path", "User")
+
+    $alreadyInPath = $false
+    if ($currentSystemPath -like "*$pathToAdd*") {
+        Write-Host "Directory is already in system PATH!" -ForegroundColor Green
+        $alreadyInPath = $true
+    } elseif ($currentUserPath -like "*$pathToAdd*") {
+        Write-Host "Directory is already in user PATH!" -ForegroundColor Green
+        $alreadyInPath = $true
+    }
+
+    if (-not $alreadyInPath) {
+        # Add to PATH for current session
+        $env:PATH = "$env:PATH;$pathToAdd"
+        Write-Host "Added to PATH for current session." -ForegroundColor Green
+
+        # Ask user if they want to add permanently
+        Write-Host ""
+        $choice = Read-Host "Do you want to add this directory to PATH permanently? (Y/N)"
+
+        if ($choice.ToUpper() -eq "Y") {
+            # Try to add to system PATH permanently (requires admin rights)
+            Write-Host "Adding to system PATH permanently..." -ForegroundColor Yellow
+
+            try {
+                if ([string]::IsNullOrEmpty($currentSystemPath)) {
+                    $newSystemPath = $pathToAdd
+                } else {
+                    $newSystemPath = "$currentSystemPath;$pathToAdd"
+                }
+                
+                [Environment]::SetEnvironmentVariable("Path", $newSystemPath, "Machine")
+                Write-Host "Successfully added to system PATH!" -ForegroundColor Green
+                Write-Host "Please restart your command prompt or applications to see the changes." -ForegroundColor Yellow
+                
+            } catch {
+                Write-Host "Failed to add to system PATH. Trying user PATH instead..." -ForegroundColor Yellow
+                
+                try {
+                    # Check if user PATH already contains our directory
+                    if (![string]::IsNullOrEmpty($currentUserPath) -and $currentUserPath -like "*$pathToAdd*") {
+                        Write-Host "Directory is already in user PATH!" -ForegroundColor Green
+                    } else {
+                        if ([string]::IsNullOrEmpty($currentUserPath)) {
+                            $newUserPath = $pathToAdd
+                        } else {
+                            $newUserPath = "$currentUserPath;$pathToAdd"
+                        }
+                        
+                        [Environment]::SetEnvironmentVariable("Path", $newUserPath, "User")
+                        Write-Host "Successfully added to user PATH!" -ForegroundColor Green
+                        Write-Host "Please restart your command prompt or applications to see the changes." -ForegroundColor Yellow
+                    }
+                } catch {
+                    Write-Host "Failed to add to PATH permanently. You may need to run as administrator." -ForegroundColor Red
+                }
+            }
         }
     }
-    
-    if ($batFile -and (Test-Path $batFile.FullName)) {
-        $batPath = $batFile.FullName
-        Write-Host "Running: $batPath" -ForegroundColor Green
+
+    Write-Host ""
+    Write-Host "Installing Python package 'rich'..." -ForegroundColor Cyan
+
+    try {
+        $process = Start-Process -FilePath "pip3" -ArgumentList "install", "rich" -Wait -PassThru -NoNewWindow -RedirectStandardOutput "$temp\pip_output.txt" -RedirectStandardError "$temp\pip_error.txt"
         
-        $batDir = Split-Path $batPath -Parent
-        Push-Location $batDir
-        
-        if ($batFile.Extension -eq '.ps1') {
-            Write-Host "Running PowerShell script in current session..." -ForegroundColor Yellow
-            # Execute the script in the current PowerShell session
-            & $batPath
+        if ($process.ExitCode -eq 0) {
+            Write-Host "Successfully installed 'rich'!" -ForegroundColor Green
         } else {
-            & cmd.exe /c "`"$batPath`""
+            Write-Host "Failed to install 'rich'." -ForegroundColor Red
+            if (Test-Path "$temp\pip_error.txt") {
+                $errorContent = Get-Content "$temp\pip_error.txt" -Raw
+                Write-Host "Error: $errorContent" -ForegroundColor Red
+            }
+            Write-Host "Make sure Python and pip3 are installed." -ForegroundColor Yellow
         }
         
-        Pop-Location
-        
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "`n✅ $programName installed successfully to $installPath!" -ForegroundColor Green
-        } else {
-            Write-Host "`n❌ Installation may have encountered issues." -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "❌ Error: path_adder file not found!" -ForegroundColor Red
-        Write-Host "Looking for: path_adder.bat, path_adder.cmd, or path_adder.ps1" -ForegroundColor Yellow
-        Write-Host "Contents of installation directory:" -ForegroundColor Yellow
-        Get-ChildItem -Path $installPath -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" -ForegroundColor Gray }
-        exit 1
+    } catch {
+        Write-Host "Failed to install 'rich'. Make sure Python and pip3 are installed." -ForegroundColor Red
+        Write-Host "Error: $_" -ForegroundColor Red
     }
     
 } catch {
