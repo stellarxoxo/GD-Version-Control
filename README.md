@@ -1,6 +1,9 @@
 # GD-Version-Control
 A command line program so you don't have to create hundreds of copies of everything you're working on in Geometry Dash
 
+# IMPORTANT
+This mod required the WSLiveEditor mod on the Geode index! Make sure you have that or nothing will work X_X
+
 ## Powershell Install Command
 1) Open powershell in administrator and run this command. then you are done
 ```powershell
